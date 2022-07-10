@@ -62,6 +62,13 @@ def parse_args():
                         required=True,
                         help='The directory that holds all your exploits')
 
+    parser.add_argument('-n', '--num-threads',
+                        type=int,
+                        metavar='THREADS',
+                        required=False,
+                        default=64,
+                        help='Maximum number of threads to spawn')
+
     return parser.parse_args()
 
 
@@ -109,6 +116,7 @@ def main(args):
     user = args.user
     token = args.token
     exploit_directory = args.exploit_directory
+    num_threads = args.num_threads
 
     logging.info('Connecting to the flagWarehouse server...')
     r = None
@@ -152,7 +160,7 @@ def main(args):
                 continue
 
             original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-            pool = Pool(min(100, len(scripts) * len(teams)))
+            pool = Pool(min(num_threads, len(scripts) * len(teams)))
             signal.signal(signal.SIGINT, original_sigint_handler)
 
             for script in scripts:
