@@ -27,7 +27,9 @@ BANNER = '''
 '''[1:]
 
 logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s',
-                    datefmt='%H:%M:%S', level=logging.INFO)
+                    datefmt='%H:%M:%S', level=logging.DEBUG if os.environ.get('LOG') == 'DEBUG' or os.environ.get('LOG_LEVEL') == 'DEBUG' else logging.INFO)
+logging.debug('DEBUG MODE ACTIVE!')
+
 
 
 def parse_args():
@@ -77,6 +79,7 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
         if output == '' and p.poll() is not None:
             break
         if output:
+            logging.debug(output)
             flags = pattern.findall(output)
             if flags:
                 msg = {'username': user, 'flags': []}
@@ -149,7 +152,7 @@ def main(args):
                 continue
 
             original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-            pool = Pool(len(scripts) * len(teams))
+            pool = Pool(min(100, len(scripts) * len(teams)))
             signal.signal(signal.SIGINT, original_sigint_handler)
 
             for script in scripts:
