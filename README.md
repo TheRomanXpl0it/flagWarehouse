@@ -25,6 +25,8 @@ pip3 install -r requirements.txt
 Edit the parameters in [config.py](server/config.py)
 
 - `WEB_PASSWORD`: the password to access the web interface
+- `API_TOKEN`: token used for communication between clients and server
+- `TEAM_TOKEN`: token used to submit flags
 - `FLAG_FORMAT`: string containing the regex format of the flags
 - `YOUR_TEAM`: the ip address of your team
 - `TEAMS`: the ip addresses of the teams in the competition
@@ -34,7 +36,15 @@ Edit the parameters in [config.py](server/config.py)
 - `SUB_INTERVAL`: interval in seconds for the submission; if the submission round takes more than the number of seconds
                   specified, the background submission loop will not sleep
 - `SUB_URL`: the url used for the verification of the flags
-- `SUB_ACCEPTED`: the string used to verify whether the verification server accepted the flag
+
+Responses and strings used in the interface
+- `SUB_ACCEPTED`: string indicating verification server accepted the flag
+- `SUB_INVALID`: string indicating verification server refused an invalid flag
+- `SUB_OLD`: string indicating verification server refused an old flag
+- `SUB_YOUR_OWN`: string indicating verification server refused an owned flag
+- `SUB_STOLEN`: string indicating verification server refused an already submitted flag
+- `SUB_NOP`: string indicating verification server refused a NOP machine flag
+- `SUB_NOT_AVAILABLE` = string indicating another error
 
 There is also the environment variable `FLASK_DEBUG` in [run.sh](server/run.sh): if set, any edit to the source files
 (including the configuration file) while the server is running will trigger a restart with the new parameters.
@@ -63,6 +73,9 @@ for example, running this app *as is* on [Heroku](https://heroku.com) would prob
 For any other modifications, follow the guidelines for Flask deployment of your platform of choice.
 
 ## Client
+
+- TLDR: `python client.py -s https://dfe6-37-163-128-203.ngrok.io -u USERNAME -t TOKEN -d ./exploits/`
+
 The client is a simple Python script that runs all the programs (both scripts and binaries) in a specific directory.
 The programs *need* to run only one time on one target (the target IP address is passed via argv by the client). For a
 basic template, please refer to [example.py](client/exploits/example.py).
@@ -76,3 +89,15 @@ Right now, the module `requests` is still needed and listed in [requirements.txt
 future, I might use `urllib` in order to avoid external dependencies.
 
 For a list and explanation of the possible options, please refer to the CLI help.
+
+### REMEMBER
+
+- Attack scripts must have coherent names
+- Attack scripts must have `#!/usr/bin/env python` at the beginning
+- Attack scripts must be executable
+- Set
+    - `TEAM_TOKEN`
+    - `YOUR_TEAM`
+    - `FLAG_FORMAT`
+    - `SUB_URL`
+    - Strings of verification messages if necessary

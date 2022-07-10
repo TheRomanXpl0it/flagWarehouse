@@ -24,6 +24,7 @@ class Config(object):
     SUB_NOP = 'from NOP team'
     SUB_NOT_AVAILABLE = 'is not available'
 
+    # Don't worry about this
     DB_NSUB = 'NOT_SUBMITTED'
     DB_SUB = 'SUBMITTED'
     DB_SUCC = 'SUCCESS'
@@ -33,3 +34,4 @@ class Config(object):
     SECRET_KEY = 'changeme'
 
     DATABASE = 'instance/flagWarehouse.sqlite'
+    #################
