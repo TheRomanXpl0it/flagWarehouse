@@ -74,7 +74,7 @@ For any other modifications, follow the guidelines for Flask deployment of your 
 
 ## Client
 
-- TLDR: `python client.py -s https://dfe6-37-163-128-203.ngrok.io -u USERNAME -t TOKEN -d ./exploits/`
+- TLDR: `python client.py -s https://dfe6-37-163-128-203.ngrok.io -u USERNAME -t TOKEN -d ./exploits/ -n THREADS`
 
 The client is a simple Python script that runs all the programs (both scripts and binaries) in a specific directory.
 The programs *need* to run only one time on one target (the target IP address is passed via argv by the client). For a
