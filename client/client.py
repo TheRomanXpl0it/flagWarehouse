@@ -14,6 +14,7 @@ from multiprocessing import Pool
 from threading import Timer
 
 import requests
+import json
 
 BANNER = '''
   ___ __               ________                    __                            
@@ -25,11 +26,6 @@ BANNER = '''
           The perfect solution for running all your exploits in one go!          
 
 '''[1:]
-
-logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s',
-                    datefmt='%H:%M:%S', level=logging.DEBUG if os.environ.get('LOG') == 'DEBUG' or os.environ.get('LOG_LEVEL') == 'DEBUG' else logging.INFO)
-logging.debug('DEBUG MODE ACTIVE!')
-
 
 
 def parse_args():
@@ -62,6 +58,10 @@ def parse_args():
                         required=True,
                         help='The directory that holds all your exploits')
 
+    parser.add_argument('-v', '--verbose',
+                        action='store_true',
+                        help='Verbose output')
+    
     parser.add_argument('-n', '--num-threads',
                         type=int,
                         metavar='THREADS',
@@ -77,7 +77,8 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
         timer.cancel()
         process.kill()
 
-    p = subprocess.Popen([exploit, ip], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(
+        [exploit, ip], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     timer = Timer(math.ceil(0.95 * round_duration), timer_out, args=[p])
 
     timer.start()
@@ -86,7 +87,7 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
         if output == '' and p.poll() is not None:
             break
         if output:
-            logging.debug(output)
+            logging.debug(f'{os.path.basename(exploit)}@{ip} => {output}')
             flags = pattern.findall(output)
             if flags:
                 msg = {'username': user, 'flags': []}
@@ -103,57 +104,103 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
     return_code = p.poll()
     timer.cancel()
     if return_code == -9:
-        logging.error(f'Exploit {os.path.basename(exploit)} on team {ip} was killed because it took too long to finish')
+        logging.error(
+            f'{os.path.basename(exploit)}@{ip} was killed because it took too long to finish')
     elif return_code != 0:
-        logging.error(f'Exploit {os.path.basename(exploit)} on team {ip} terminated with error code {return_code}')
+        logging.error(
+            f'{os.path.basename(exploit)}@{ip} terminated with error code {return_code}')
 
 
 def main(args):
     global pool
     print(BANNER)
 
+    # Parse parameters
     server_url = args.server_url
     user = args.user
     token = args.token
+    verbose = args.verbose
     exploit_directory = args.exploit_directory
     num_threads = args.num_threads
 
+    logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s',
+                        datefmt='%H:%M:%S', level=logging.DEBUG if verbose else logging.INFO)
+
+    # Retrieve configuration from server
     logging.info('Connecting to the flagWarehouse server...')
     r = None
     try:
-        r = requests.get(server_url + '/api/get_config', headers={'X-Auth-Token': token})
+        r = requests.get(server_url + '/api/get_config',
+                         headers={'X-Auth-Token': token})
         if r.status_code == 403:
             logging.error('Wrong authorization token.')
             logging.info('Exiting...')
+            sys.exit(0)
+
+        if r.status_code != 200:
+            logging.error(f'GET {server_url}/api/get_config responded with [{r.status_code}].')
+            logging.info('Exiting...')
+            sys.exit(0)
+
     except requests.exceptions.RequestException as e:
-        logging.error('Could not connect to the server: ' + e.__class__.__name__)
+        logging.error(f'Could not connect to {server_url}: ' +
+                      e.__class__.__name__)
         logging.info('Exiting...')
         sys.exit(0)
+
+    # Parse server config
     config = r.json()
+    # Print server config
+    if verbose:
+        logging.debug(json.dumps(config, indent=4, sort_keys=True))
     flag_format = re.compile(config['format'])
     round_duration = config['round']
     teams = config['teams']
+    flagid_url = config.get('flagid_url', '')
     logging.info('Client correctly configured.')
 
+    # MAIN LOOP
     while True:
         try:
             requests.head(server_url)
             s_time = time.time()
 
+            # Retrieve flag_ids
+            if flagid_url:
+                try:
+                    r = requests.get(flagid_url, timeout=15)
+
+                    if r.status_code != 200:
+                        logging.error(
+                            f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
+                        time.sleep(5)
+                        continue
+
+                    dir_path = os.path.dirname(os.path.realpath(__file__))
+                    with open(f'{dir_path}/flag_ids.json', 'w', encoding='utf-8') as f:
+                        f.write(r.text)
+                except TimeoutError:
+                    logging.error(
+                        f'{flagid_url} timed out: Retrying in 5 seconds.')
+                    time.sleep(5)
+                    continue
+
+            # Load exploits
             try:
                 scripts = [os.path.join(exploit_directory, s) for s in os.listdir(exploit_directory) if
-                           os.path.isfile(os.path.join(exploit_directory, s))]
+                           os.path.isfile(os.path.join(exploit_directory, s)) and not s.startswith('.')]
             except FileNotFoundError:
                 logging.error('The directory specified does not exist.')
                 logging.info('Exiting...')
                 sys.exit(0)
             except PermissionError:
-                logging.error('You do not have the necessary permissions to use this directory.')
+                logging.error(
+                    'You do not have the necessary permissions to use this directory.')
                 logging.info('Exiting')
                 sys.exit(0)
-
             if scripts:
-                logging.info(f'Starting new round. Running {len(scripts)} exploits.')
+                logging.info(
+                    f'Starting new round. Running {len(scripts)} exploits.')
             else:
                 logging.info('No exploits found: retrying in 15 seconds')
                 time.sleep(15)
@@ -163,22 +210,29 @@ def main(args):
             pool = Pool(min(num_threads, len(scripts) * len(teams)))
             signal.signal(signal.SIGINT, original_sigint_handler)
 
+            # Run exploits
             for script in scripts:
                 for team in teams:
-                    pool.apply_async(run_exploit, (script, team, round_duration, server_url, token, flag_format, user))
+                    pool.apply_async(
+                        run_exploit, (script, team, round_duration, server_url, token, flag_format, user))
             pool.close()
             pool.join()
 
             duration = time.time() - s_time
+            logging.debug(f'round took {round(duration, 1)} seconds')
+
             if duration < round_duration:
-                logging.debug(f'Sleeping for {round(duration, 1)} seconds')
+                logging.debug(f'Sleeping for {round(round_duration - duration, 1)} seconds')
                 time.sleep(round_duration - duration)
+
+        # Exceptions
         except KeyboardInterrupt:
             logging.info('Caught KeyboardInterrupt. Bye!')
             pool.terminate()
             break
         except requests.exceptions.RequestException:
-            logging.error('Could not communicate with the server: retrying in 5 seconds.')
+            logging.error(
+                'Could not communicate with the server: retrying in 5 seconds.')
             time.sleep(5)
             continue
 
