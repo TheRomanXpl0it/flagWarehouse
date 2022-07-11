@@ -11,6 +11,8 @@ class Config(object):
     FLAG_ALIVE = 5 * ROUND_DURATION
     FLAG_FORMAT = r'[A-Z0-9]{31}='
 
+    FLAGID_URL = "https://6.enowars.com/scoreboard/attack.json"
+
     SUB_LIMIT = 1
     SUB_INTERVAL = 5
     SUB_PAYLOAD_SIZE = 100
