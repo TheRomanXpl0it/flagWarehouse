@@ -129,6 +129,7 @@ def main(args):
     flag_format = re.compile(config['format'])
     round_duration = config['round']
     teams = config['teams']
+    flagid_url = config.get('FLAGID_URL', '')
     logging.info('Client correctly configured.')
 
 
@@ -137,6 +138,24 @@ def main(args):
         try:
             requests.head(server_url)
             s_time = time.time()
+
+            # Retrieve flag_ids
+            if flagid_url:
+                try:
+                    r = requests.get(flagid_url, timeout=15)
+
+                    if r.status_code != 200:
+                        logging.error(f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
+                        time.sleep(5)
+                        continue
+                    
+                    dir_path = os.path.dirname(os.path.realpath(__file__))
+                    with open(f'{dir_path}/flag_ids.json', 'w', encoding='utf-8') as f:
+                        json.dump(r.text, f, ensure_ascii=False, indent=4)
+                except TimeoutError:
+                    logging.error(f'{flagid_url} timed out: Retrying in 5 seconds.')
+                    time.sleep(5)
+                    continue
 
             # Load exploits
             try:
