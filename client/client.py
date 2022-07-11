@@ -105,11 +105,13 @@ def main(args):
     global pool
     print(BANNER)
 
+    # Parse parameters
     server_url = args.server_url
     user = args.user
     token = args.token
     exploit_directory = args.exploit_directory
 
+    # Retrieve configuration from server
     logging.info('Connecting to the flagWarehouse server...')
     r = None
     try:
@@ -121,17 +123,22 @@ def main(args):
         logging.error('Could not connect to the server: ' + e.__class__.__name__)
         logging.info('Exiting...')
         sys.exit(0)
+    
+    # Parse server config
     config = r.json()
     flag_format = re.compile(config['format'])
     round_duration = config['round']
     teams = config['teams']
     logging.info('Client correctly configured.')
 
+
+    # MAIN LOOP
     while True:
         try:
             requests.head(server_url)
             s_time = time.time()
 
+            # Load exploits
             try:
                 scripts = [os.path.join(exploit_directory, s) for s in os.listdir(exploit_directory) if
                            os.path.isfile(os.path.join(exploit_directory, s))]
@@ -143,7 +150,6 @@ def main(args):
                 logging.error('You do not have the necessary permissions to use this directory.')
                 logging.info('Exiting')
                 sys.exit(0)
-
             if scripts:
                 logging.info(f'Starting new round. Running {len(scripts)} exploits.')
             else:
@@ -151,10 +157,12 @@ def main(args):
                 time.sleep(15)
                 continue
 
+            # Setup multiprocessing
             original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-            pool = Pool(min(100, len(scripts) * len(teams)))
+            pool = Pool(min(128, len(scripts) * len(teams)))
             signal.signal(signal.SIGINT, original_sigint_handler)
 
+            # Run exploits
             for script in scripts:
                 for team in teams:
                     pool.apply_async(run_exploit, (script, team, round_duration, server_url, token, flag_format, user))
@@ -165,6 +173,9 @@ def main(args):
             if duration < round_duration:
                 logging.debug(f'Sleeping for {round(duration, 1)} seconds')
                 time.sleep(round_duration - duration)
+
+
+        # Exceptions
         except KeyboardInterrupt:
             logging.info('Caught KeyboardInterrupt. Bye!')
             pool.terminate()
