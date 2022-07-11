@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 sys.path.insert(1, '../imports/')
 sys.path.insert(1, 'imports/')
@@ -9,35 +10,36 @@ import json
 from bs4 import BeautifulSoup
 from pwn import *
 
+# Use this function to print stuff to client
+def log(message):
+    print(message, flush=True)
 
 IP_ADDRESS = sys.argv[1]
+dir_path = os.path.dirname(os.path.realpath(__file__)) + '/../'
+flag_ids = {}
+with open(dir_path + 'flag_ids.json', 'r', encoding='utf-8') as f:
+    flag_ids = json.loads(f.read())
+    #log(flag_ids)
 
-# MODIFY THIS PART !!!
-SERVICE = "TEST"
-PORT = 1234
-# MODIFY THIS PART !!!
-TARGET_URL = f'http://{IP_ADDRESS}:{PORT}'
-
-
-res = requests.get('https://6.enowars.com/scoreboard/attack.json', timeout=10)
-teams = json.loads(res.text)
-#print(teams)
-
-
+  
 # Adjust if needed
-valid_users = teams.get('services').get(SERVICE).get(IP_ADDRESS)
-#print(valid_users)
-
 headers = { 
     'User-Agent': utils.user_agent(),
     }
-    
-# Adjust if needed
 data = {
     'email' : utils.email(),
     'username' : utils.username(max=12),
     'password' : utils.password(max=12)
 }
+
+
+# Adjust if needed
+SERVICE = "TEST"
+PORT = 1234
+TARGET_URL = f'http://{IP_ADDRESS}:{PORT}'
+
+valid_users = flag_ids.get('services', {}).get(SERVICE, {}).get(IP_ADDRESS, [])
+#print(valid_users)
 
 for user in valid_users:
 
