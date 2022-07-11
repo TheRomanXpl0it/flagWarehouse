@@ -86,7 +86,7 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
         if output == '' and p.poll() is not None:
             break
         if output:
-            logging.debug(output)
+            logging.debug(f'{exploit.split("/")[-1]}@{ip} => {output}')
             flags = pattern.findall(output)
             if flags:
                 msg = {'username': user, 'flags': []}
@@ -151,7 +151,7 @@ def main(args):
     config = r.json()
     # Print server config
     if verbose:
-        print(config)
+        logging.debug(json.dumps(config, indent=4, sort_keys=True))
     flag_format = re.compile(config['format'])
     round_duration = config['round']
     teams = config['teams']
@@ -177,7 +177,7 @@ def main(args):
 
                     dir_path = os.path.dirname(os.path.realpath(__file__))
                     with open(f'{dir_path}/flag_ids.json', 'w', encoding='utf-8') as f:
-                        json.dump(r.text, f, ensure_ascii=False, indent=4)
+                        f.write(r.text)
                 except TimeoutError:
                     logging.error(
                         f'{flagid_url} timed out: Retrying in 5 seconds.')
@@ -220,10 +220,10 @@ def main(args):
             pool.join()
 
             duration = time.time() - s_time
-            logging.info(f'round took {round(duration, 2)} seconds')
+            logging.debug(f'round took {round(duration, 1)} seconds')
 
             if duration < round_duration:
-                logging.debug(f'Sleeping for {round(duration, 1)} seconds')
+                logging.debug(f'Sleeping for {round(round_duration - duration, 1)} seconds')
                 time.sleep(round_duration - duration)
 
         # Exceptions
