@@ -189,6 +189,15 @@ def main(args):
             try:
                 scripts = [os.path.join(exploit_directory, s) for s in os.listdir(exploit_directory) if
                            os.path.isfile(os.path.join(exploit_directory, s)) and not s.startswith('.')]
+
+                # Filter non executable
+                for s in scripts:
+                    if not os.access(s, os.X_OK):
+                        logging.warning(f'{os.path.basename(s)} is not executable, hence it will be skipped...')
+
+                # Remove non executable scripts 
+                scripts = list(filter(lambda script: os.access(script, os.X_OK), scripts))
+
             except FileNotFoundError:
                 logging.error('The directory specified does not exist.')
                 logging.info('Exiting...')
@@ -201,6 +210,7 @@ def main(args):
             if scripts:
                 logging.info(
                     f'Starting new round. Running {len(scripts)} exploits.')
+                logging.debug(f"Exploits: [{', '.join(map(lambda script: os.path.basename(script), scripts))}]")
             else:
                 logging.info('No exploits found: retrying in 15 seconds')
                 time.sleep(15)
