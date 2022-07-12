@@ -14,21 +14,13 @@ class Config(object):
     FLAG_ALIVE = 5 * ROUND_DURATION
     FLAG_FORMAT = r'[A-Z0-9]{31}='
 
-    
     FLAGID_URL = '' # flag_ids endpoint, leave blank if none
 
+    SUB_PROTOCOL = 'ccit' # submitter protocol. Valid values are 'dummy', 'ccit'
     SUB_LIMIT = 1 # number of requests per interval
     SUB_INTERVAL = 5 # interval duration
     SUB_PAYLOAD_SIZE = 100 # max flag per request
     SUB_URL = 'http://10.1.0.2/flags' # flag submission endpoint
-
-    SUB_ACCEPTED = 'accepted'
-    SUB_INVALID = 'invalid'
-    SUB_OLD = 'too old'
-    SUB_YOUR_OWN = 'your own'
-    SUB_STOLEN = 'already stolen'
-    SUB_NOP = 'from NOP team'
-    SUB_NOT_AVAILABLE = 'is not available'
 
     # Don't worry about this
     DB_NSUB = 'NOT_SUBMITTED'

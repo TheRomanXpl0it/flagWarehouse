@@ -3,12 +3,69 @@ import time
 from datetime import datetime, timedelta
 from queue import Queue
 import json
+from typing import List
 
 import requests
 from flask import Flask, current_app
 from ordered_set import OrderedSet
 
 from . import db
+
+
+class Submitter:
+    def submit_flags(self, flags: List[str]):
+        """
+        Should return
+        [
+            {"flag":"<flag1>","msg":"status from server"},
+            {"flag":"<flag2>","msg":"status from server"},
+            ...
+        ]
+        """
+        raise NotImplementedError()
+
+class DummySubmitter(Submitter):
+    SUB_ACCEPTED = 'accepted'
+    SUB_INVALID = 'invalid'
+    SUB_OLD = 'too old'
+    SUB_YOUR_OWN = 'your own'
+    SUB_STOLEN = 'already stolen'
+    SUB_NOP = 'from NOP team'
+    SUB_NOT_AVAILABLE = 'is not available'
+
+    def submit_flags(self, flags):
+        res = []
+        for flag in flags:
+            current_app.logger.debug(f'Dummy submitter: submitting {flag}')
+            res.append({"flag":flag,"msg":self.SUB_ACCEPTED})
+        return res
+
+class CCITSubmitter(Submitter):
+    SUB_ACCEPTED = 'accepted'
+    SUB_INVALID = 'invalid'
+    SUB_OLD = 'too old'
+    SUB_YOUR_OWN = 'your own'
+    SUB_STOLEN = 'already stolen'
+    SUB_NOP = 'from NOP team'
+    SUB_NOT_AVAILABLE = 'is not available'
+
+    def submit_flags(self, flags):
+        res = requests.put(current_app.config['SUB_URL'],
+                            headers={'X-Team-Token': current_app.config['TEAM_TOKEN']},
+                            json=flags,
+                            timeout=(current_app.config['SUB_INTERVAL'] / current_app.config['SUB_LIMIT']))
+
+        # Check if the gameserver sent a response about the flags or if it sent an error
+        if res.headers['Content-Type'] == 'application/json; charset=utf-8':
+            return json.loads(res.text)
+        else:
+            current_app.logger.error(f'Received this response from the gameserver:\n\n{res.text}\n')
+            return []
+
+submitters = {
+    'dummy': DummySubmitter,
+    'ccit': CCITSubmitter
+}
 
 
 class OrderedSetQueue(Queue):
@@ -31,6 +88,12 @@ class OrderedSetQueue(Queue):
 def loop(app: Flask):
     with app.app_context():
         logger = current_app.logger  # Need to get it before sleep, otherwise it doesn't work. Don't know why.
+
+        if current_app.config["SUB_PROTOCOL"] not in submitters.keys():
+            logger.error(f"Invalid SUB_PROTOCOL {current_app.config['SUB_PROTOCOL']}. Valid values are {list(submitters.keys())}")
+            return
+        submitter = submitters[current_app.config["SUB_PROTOCOL"]]()
+
         # Let's not make it start right away
         time.sleep(5)
         logger.info('starting.')
@@ -44,7 +107,7 @@ def loop(app: Flask):
             SELECT flag
             FROM flags
             WHERE time > ? AND status = ? AND server_response IS NULL
-            ORDER BY time DESC 
+            ORDER BY time DESC
             ''', (expiration_time, current_app.config['DB_NSUB']))
             for flag in cursor.fetchall():
                 queue.put(flag[0])
@@ -58,37 +121,26 @@ def loop(app: Flask):
                     for _ in range(min(current_app.config['SUB_PAYLOAD_SIZE'], queue_length)):
                         flags.append(queue.get())
 
-                    res = requests.put(current_app.config['SUB_URL'],
-                                       headers={'X-Team-Token': current_app.config['TEAM_TOKEN']},
-                                       json=flags,
-                                       timeout=(current_app.config['SUB_INTERVAL'] / current_app.config['SUB_LIMIT']))
-                    j_res = []
-
-                    # Check if the gameserver sent a response about the flags or if it sent an error
-                    if res.headers['Content-Type'] == 'application/json; charset=utf-8':
-                        j_res = json.loads(res.text)
-                    else:
-                        logger.error(f'Received this response from the gameserver:\n\n{res.text}\n')
-                        continue
+                    submit_result = submitter.submit_flags(flags)
 
                     # executemany() would be better, but it's fine like this.
-                    for item in j_res:
-                        if (current_app.config['SUB_INVALID'].lower() in item['msg'].lower() or
-                                current_app.config['SUB_YOUR_OWN'].lower() in item['msg'].lower() or
-                                current_app.config['SUB_STOLEN'].lower() in item['msg'].lower() or
-                                current_app.config['SUB_NOP'].lower() in item['msg'].lower()):
+                    for item in submit_result:
+                        if (submitter.SUB_INVALID.lower() in item['msg'].lower() or
+                                submitter.SUB_YOUR_OWN.lower() in item['msg'].lower() or
+                                submitter.SUB_STOLEN.lower() in item['msg'].lower() or
+                                submitter.SUB_NOP.lower() in item['msg'].lower()):
                             cursor.execute('''
                             UPDATE flags
                             SET status = ?, server_response = ?
                             WHERE flag = ?
                             ''', (current_app.config['DB_SUB'], current_app.config['DB_ERR'], item['flag']))
-                        elif current_app.config['SUB_OLD'].lower() in item['msg'].lower():
+                        elif submitter.SUB_OLD.lower() in item['msg'].lower():
                             cursor.execute('''
                             UPDATE flags
                             SET status = ?, server_response = ?
                             WHERE flag = ?
                             ''', (current_app.config['DB_SUB'], current_app.config['DB_EXP'], item['flag']))
-                        elif current_app.config['SUB_ACCEPTED'].lower() in item['msg'].lower():
+                        elif submitter.SUB_ACCEPTED.lower() in item['msg'].lower():
                             cursor.execute('''
                             UPDATE flags
                             SET status = ?, server_response = ?

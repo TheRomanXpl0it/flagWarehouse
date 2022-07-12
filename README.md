@@ -32,6 +32,7 @@ Edit the parameters in [config.py](server/config.py)
 - `TEAMS`: the ip addresses of the teams in the competition
 - `ROUND_DURATION`: the duration of a round (or *tick*) in seconds
 - `FLAG_ALIVE`: the number of seconds a flag can be considered valid
+- `SUB_PROTOCOL`: gameserver submission protocol. Valid values are `dummy` (will only print flags on stdout), `ccit` and `faust`
 - `SUB_LIMIT`: number of flags that can be sent to the organizers' server each `SUB_INTERVAL`
 - `SUB_INTERVAL`: interval in seconds for the submission; if the submission round takes more than the number of seconds
                   specified, the background submission loop will not sleep
