@@ -2,9 +2,6 @@ version: "3.3"
 
 services:
 
-  #TODO ADD DB
-  # database:
-
   server:
     container_name: flag_warehouse
     image: tox1k/flag_warehouse:latest
@@ -15,8 +12,6 @@ services:
     volumes:
       - ./config.py:/server/config.py
       - db:/server/instance/
-    #depends_on:
-    #  - database
 
 volumes:
   db:
