@@ -16,7 +16,7 @@ class Config(object):
 
     FLAGID_URL = '' # flag_ids endpoint, leave blank if none
 
-    SUB_PROTOCOL = 'faust' # submitter protocol. Valid values are 'dummy', 'ccit'
+    SUB_PROTOCOL = 'faust' # submitter protocol. Valid values are 'dummy', 'ccit', 'faust'
     SUB_LIMIT = 1 # number of requests per interval
     SUB_INTERVAL = 5 # interval duration
     SUB_PAYLOAD_SIZE = 100 # max flag per request
