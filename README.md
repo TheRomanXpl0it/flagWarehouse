@@ -38,15 +38,6 @@ Edit the parameters in [config.py](server/config.py)
                   specified, the background submission loop will not sleep
 - `SUB_URL`: the url used for the verification of the flags
 
-Responses and strings used in the interface
-- `SUB_ACCEPTED`: string indicating verification server accepted the flag
-- `SUB_INVALID`: string indicating verification server refused an invalid flag
-- `SUB_OLD`: string indicating verification server refused an old flag
-- `SUB_YOUR_OWN`: string indicating verification server refused an owned flag
-- `SUB_STOLEN`: string indicating verification server refused an already submitted flag
-- `SUB_NOP`: string indicating verification server refused a NOP machine flag
-- `SUB_NOT_AVAILABLE` = string indicating another error
-
 There is also the environment variable `FLASK_DEBUG` in [run.sh](server/run.sh): if set, any edit to the source files
 (including the configuration file) while the server is running will trigger a restart with the new parameters.
 Take note that **the submission loop will not be restarted automatically**, even in debug mode, so if you need to change
@@ -81,7 +72,7 @@ The client is a simple Python script that runs all the programs (both scripts an
 The programs *need* to run only one time on one target (the target IP address is passed via argv by the client). For a
 basic template, please refer to [example.py](client/exploits/example.py).
 
-When it starts, the client automatically fetches the configuration from the server (targets, round duration etc.). When 
+When it starts, the client automatically fetches the configuration from the server (targets, round duration etc.). When
 the exploits print something on the standard output, the client reads the output in real time and extracts the flags
 using the regex fetched from the server; as soon as the flags are found, they are sent (along with other data like the
 username and the timestamp) to the [flagWarehouse server](server).
