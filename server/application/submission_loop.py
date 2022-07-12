@@ -62,9 +62,60 @@ class CCITSubmitter(Submitter):
             current_app.logger.error(f'Received this response from the gameserver:\n\n{res.text}\n')
             return []
 
+from pwnlib.tubes.remote import remote
+import urllib.parse
+
+class FaustSubmitter(Submitter):
+    """
+    https://ctf-gameserver.org/submission/
+    SUB_URL should be of this format: tcp://submission.faustctf.net:666/
+    """
+    SUB_ACCEPTED = 'OK'
+    SUB_INVALID = 'INV'
+    SUB_OLD = 'OLD'
+    SUB_YOUR_OWN = 'OWN'
+    SUB_STOLEN = 'DUP'
+    SUB_NOP = 'INV'
+    SUB_NOT_AVAILABLE = 'ERR'
+
+    def __init__(self):
+        url = urllib.parse.urlsplit(current_app.config['SUB_URL'])
+        self.host = url.hostname
+        self.port = url.port
+        current_app.logger.info(f'{self.host}, {self.port}')
+
+    def submit_flags(self, flags):
+        flags = set(flags)
+
+        try:
+            s = remote(self.host, self.port, timeout=current_app.config['SUB_INTERVAL'] / current_app.config['SUB_LIMIT'])
+            line = s.recvline()
+            while line.strip() != b'':
+                line = s.recvline()
+
+            res = []
+            for flag in flags:
+                s.sendline(flag.encode())
+                line = s.recvline().decode()
+
+                line = line.split()
+                if len(line) < 1 or line[0] not in flags:
+                    print('submitter: skipping response line', line)
+                    continue
+
+                res.append({'flag':line[0], 'msg':line[1]})
+                print(res)
+
+            return res
+
+        except Exception as e:
+            print(e)
+            return []
+
 submitters = {
     'dummy': DummySubmitter,
-    'ccit': CCITSubmitter
+    'ccit': CCITSubmitter,
+    'faust': FaustSubmitter
 }
 
 
