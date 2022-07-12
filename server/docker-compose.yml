@@ -1,0 +1,25 @@
+version: "3.3"
+
+services:
+
+  #TODO ADD DB
+  # database:
+
+  server:
+    container_name: flag_warehouse
+    image: tox1k/flag_warehouse:latest
+    #build: 
+    #  context: .
+    ports:
+      - 5000:5000
+    volumes:
+      - ./config.py:/server/config.py
+      - db:/server/instance/
+    #depends_on:
+    #  - database
+
+volumes:
+  db:
+    external: false
+  
+  
