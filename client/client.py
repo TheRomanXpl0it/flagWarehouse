@@ -198,6 +198,17 @@ def main(args):
                 # Remove non executable scripts 
                 scripts = list(filter(lambda script: os.access(script, os.X_OK), scripts))
 
+                # Check for shebang
+                no_shbang = []
+                for s in scripts:
+                    with open(s, 'r', encoding='utf-8') as f:
+                        if not f.read(2) == '#!':
+                            logging.warning(f'{os.path.basename(s)} no shebang #!, hence it will be skipped...')
+                            no_shbang.append(s)
+
+                # Remove scripts without shebang 
+                scripts = list(filter(lambda script: script not in no_shbang, scripts))
+
             except FileNotFoundError:
                 logging.error('The directory specified does not exist.')
                 logging.info('Exiting...')
