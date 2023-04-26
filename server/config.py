@@ -2,7 +2,7 @@ class Config(object):
     # WEB APPLICATION PASSWORD
     WEB_PASSWORD = 'password'
 
-    # CLIENT API TOKEN
+    # CLIENT API TOKEN - CHANGE THIS
     API_TOKEN = 'token'
 
     YOUR_TEAM = '10.60.14.1'
@@ -14,13 +14,13 @@ class Config(object):
     FLAG_ALIVE = 5 * ROUND_DURATION
     FLAG_FORMAT = r'[A-Z0-9]{31}='
 
-    FLAGID_URL = '' # flag_ids endpoint, leave blank if none
+    FLAGID_URL = 'http://10.10.0.1:8081/flagIds' # flag_ids endpoint, leave blank if none
 
-    SUB_PROTOCOL = 'faust' # submitter protocol. Valid values are 'dummy', 'ccit', 'faust'
+    SUB_PROTOCOL = 'ccit' # submitter protocol. Valid values are 'dummy', 'ccit', 'faust'
     SUB_LIMIT = 1 # number of requests per interval
     SUB_INTERVAL = 5 # interval duration
     SUB_PAYLOAD_SIZE = 100 # max flag per request
-    SUB_URL = 'tcp://submission.faustctf.net:666/' # flag submission endpoint
+    SUB_URL = 'http://10.10.0.1:8080/flags'
 
     # Don't worry about this
     DB_NSUB = 'NOT_SUBMITTED'
@@ -29,6 +29,7 @@ class Config(object):
     DB_ERR = 'ERROR'
     DB_EXP = 'EXPIRED'
 
+    # CHANGE THIS
     SECRET_KEY = 'changeme'
 
     DATABASE = 'instance/flagWarehouse.sqlite'
