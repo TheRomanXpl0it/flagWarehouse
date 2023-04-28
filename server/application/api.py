@@ -1,4 +1,6 @@
 from flask import current_app, Blueprint, request, jsonify
+import sqlite3
+import time
 
 from . import db
 from .auth import api_auth_required
@@ -29,8 +31,17 @@ def upload_flags():
         rows.append((item.get('flag'), username, item.get('exploit_name'), item.get('team_ip'), item.get('time'),
                      current_app.config['DB_NSUB']))
 
-    database = db.get_db()
-    database.executemany('INSERT OR IGNORE INTO flags (flag, username, exploit_name, team_ip, time, status) '
-                         'VALUES (?, ?, ?, ?, ?, ?)', rows)
-    database.commit()
+    # Try multiple times before failing
+    for i in range(5):
+        try:
+            database = db.get_db()
+            database.executemany('INSERT OR IGNORE INTO flags (flag, username, exploit_name, team_ip, time, status) '
+                                'VALUES (?, ?, ?, ?, ?, ?)', rows)
+            database.commit()
+            break
+        except sqlite3.OperationalError:
+            if i == 4:
+                raise
+            time.sleep(0.2)
+
     return 'Data received', 200
