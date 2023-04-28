@@ -10,11 +10,5 @@ services:
     ports:
       - 5000:5000
     volumes:
-      - ./config.py:/server/config.py
-      - db:/server/instance/
-
-volumes:
-  db:
-    external: false
-  
-  
+      - ./config.py:/server/config.py:ro
+      - ./instance:/server/instance/
