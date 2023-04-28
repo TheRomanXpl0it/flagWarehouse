@@ -17,20 +17,20 @@ import requests
 import json
 
 BANNER = '''
-  ___ __               ________                    __                            
+  ___ __               ________                    __
 .'  _|  |.---.-.-----.|  |  |  |.---.-.----.-----.|  |--.-----.--.--.-----.-----.
 |   _|  ||  _  |  _  ||  |  |  ||  _  |   _|  -__||     |  _  |  |  |__ --|  -__|
 |__| |__||___._|___  ||________||___._|__| |_____||__|__|_____|_____|_____|_____|
-               |_____|                                                           
-               
-          The perfect solution for running all your exploits in one go!          
+               |_____|
+
+          The perfect solution for running all your exploits in one go!
 
 '''[1:]
 
 
 def parse_args():
     # noinspection PyTypeChecker
-    parser = argparse.ArgumentParser(description='''Run all the exploits in the specified 
+    parser = argparse.ArgumentParser(description='''Run all the exploits in the specified
                                             directory against all the teams.''',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -61,7 +61,7 @@ def parse_args():
     parser.add_argument('-v', '--verbose',
                         action='store_true',
                         help='Verbose output')
-    
+
     parser.add_argument('-n', '--num-threads',
                         type=int,
                         metavar='THREADS',
@@ -88,8 +88,9 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
             break
         if output:
             logging.debug(f'{os.path.basename(exploit)}@{ip} => {output}')
-            flags = pattern.findall(output)
+            flags = set(pattern.findall(output))
             if flags:
+                logging.info(f'Got {len(flags)} flags from {ip}')
                 msg = {'username': user, 'flags': []}
                 t_stamp = datetime.now().replace(microsecond=0).isoformat(sep=' ')
                 for flag in flags:
@@ -195,7 +196,7 @@ def main(args):
                     if not os.access(s, os.X_OK):
                         logging.warning(f'{os.path.basename(s)} is not executable, hence it will be skipped...')
 
-                # Remove non executable scripts 
+                # Remove non executable scripts
                 scripts = list(filter(lambda script: os.access(script, os.X_OK), scripts))
 
                 # Check for shebang
@@ -206,7 +207,7 @@ def main(args):
                             logging.warning(f'{os.path.basename(s)} no shebang #!, hence it will be skipped...')
                             no_shbang.append(s)
 
-                # Remove scripts without shebang 
+                # Remove scripts without shebang
                 scripts = list(filter(lambda script: script not in no_shbang, scripts))
 
             except FileNotFoundError:
