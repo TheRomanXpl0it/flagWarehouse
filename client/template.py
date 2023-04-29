@@ -38,7 +38,7 @@ SERVICE = "TEST"
 PORT = 1234
 TARGET_URL = f'http://{IP_ADDRESS}:{PORT}'
 
-valid_users = flag_ids.get('services', {}).get(SERVICE, {}).get(IP_ADDRESS, [])
+valid_users = flag_ids.get(SERVICE, {}).get(IP_ADDRESS, [])
 #print(valid_users)
 
 for user in valid_users:
