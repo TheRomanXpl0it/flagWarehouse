@@ -200,6 +200,10 @@ def loop(app: Flask):
                         i += 1
             except requests.exceptions.RequestException:
                 logger.error('Could not send the flags to the server, retrying...')
+            except TypeError:
+                # logger.info(str(submit_result))
+                logger.error('Limit Rate exceeded, retrying...')
+                time.sleep(current_app.config['SUB_INTERVAL'])
             finally:
                 # At the end, update status as EXPIRED for flags not sent because too old
                 cursor.execute('''
