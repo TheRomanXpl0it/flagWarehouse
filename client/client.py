@@ -16,6 +16,21 @@ from threading import Timer
 import requests
 import json
 
+
+END				= "\033[0m"
+
+GREY			= "\033[30m"
+RED				= "\033[31m"
+GREEN			= "\033[32m"
+YELLOW			= "\033[33m"
+BLUE			= "\033[34m"
+PURPLE			= "\033[35m"
+CYAN			= "\033[36m"
+
+HIGH_RED		= "\033[91m"
+
+
+
 BANNER = '''
   ___ __               ________                    __
 .'  _|  |.---.-.-----.|  |  |  |.---.-.----.-----.|  |--.-----.--.--.-----.-----.
@@ -79,7 +94,7 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
 
     p = subprocess.Popen(
         [exploit, ip], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    timer = Timer(math.ceil(0.95 * round_duration), timer_out, args=[p])
+    timer = Timer(math.ceil(0.5 * round_duration), timer_out, args=[p])
 
     timer.start()
     while True:
@@ -90,7 +105,8 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
             logging.debug(f'{os.path.basename(exploit)}@{ip} => {output}')
             flags = set(pattern.findall(output))
             if flags:
-                logging.info(f'Got {len(flags)} flags from {ip}')
+                exp = exploit.split('/')[-1][:-3]
+                logging.info(f'Got {GREEN}{len(flags)}{END} flags with {BLUE}{exp}{END} from {ip}')
                 msg = {'username': user, 'flags': []}
                 t_stamp = datetime.now().replace(microsecond=0).isoformat(sep=' ')
                 for flag in flags:
@@ -106,10 +122,10 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
     timer.cancel()
     if return_code == -9:
         logging.error(
-            f'{os.path.basename(exploit)}@{ip} was killed because it took too long to finish')
+            f'{RED}{os.path.basename(exploit)}{END}@{ip} was killed because it took too long to finish')
     elif return_code != 0:
         logging.error(
-            f'{os.path.basename(exploit)}@{ip} terminated with error code {return_code}')
+            f'{RED}{os.path.basename(exploit)}{END}@{ip} terminated with error code {HIGH_RED}{return_code}{END}')
 
 
 def main(args):
