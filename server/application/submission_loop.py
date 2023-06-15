@@ -45,7 +45,7 @@ class CCITSubmitter(Submitter):
     SUB_INVALID = 'invalid'
     SUB_OLD = 'too old'
     SUB_YOUR_OWN = 'your own'
-    SUB_STOLEN = 'already stolen'
+    SUB_STOLEN = 'already claimed'
     SUB_NOP = 'from NOP team'
     SUB_NOT_AVAILABLE = 'is not available'
 
