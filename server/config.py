@@ -1,10 +1,9 @@
 class Config(object):
 
-	# Ooisv4YG7zw6wa9f
-
 	# CHANGE THIS
-	TEAM = 0
-	TEAM_TOKEN = '' # team token for flag submission
+	TEAM = 9
+	NUMBER_OF_TEAMS = 43
+	TEAM_TOKEN = '4b194a04a5e34b32185413b5886a5587' # team token for flag submission
 
 	WEB_PASSWORD = 'password'
 	API_TOKEN = 'custom_token'
@@ -12,7 +11,7 @@ class Config(object):
 
 	# Teams
 	YOUR_TEAM = f'10.60.{TEAM}.1'
-	TEAMS = [f'10.60.{i}.1' for i in range(1, 87)] # number of teams
+	TEAMS = [f'10.60.{i}.1' for i in range(1, NUMBER_OF_TEAMS + 1)]
 	TEAMS.remove(YOUR_TEAM)
 
 	ROUND_DURATION = 120

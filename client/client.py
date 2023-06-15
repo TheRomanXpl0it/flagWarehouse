@@ -52,7 +52,7 @@ def parse_args():
     parser.add_argument('-s', '--server-url',
                         type=str,
                         metavar='URL',
-                        default='http://localhost:5000',
+                        default='http://localhost:5555',
                         help='The URL of your flagWarehouse server. Please specify the protocol')
 
     parser.add_argument('-u', '--user',

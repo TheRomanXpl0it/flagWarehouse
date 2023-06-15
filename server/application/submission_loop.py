@@ -12,6 +12,45 @@ from ordered_set import OrderedSet
 from . import db
 
 
+END                = "\033[0m"
+
+GREY            = "\033[30m"
+RED                = "\033[31m"
+GREEN            = "\033[32m"
+YELLOW            = "\033[33m"
+BLUE            = "\033[34m"
+PURPLE            = "\033[35m"
+CYAN            = "\033[36m"
+
+HIGH_RED        = "\033[91m"
+HIGH_GREEN        = "\033[92m"
+HIGH_YELLOW        = "\033[93m"
+HIGH_BLUE        = "\033[94m"
+HIGH_PURPLE        = "\033[95m"
+HIGH_CYAN        = "\033[96m"
+
+
+
+class CustomFormatter(logging.Formatter):
+
+    format = "[%(asctime)s] %(levelname)s: %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: GREY + format + END,
+        logging.INFO: format,
+        logging.WARNING: YELLOW + format + END,
+        logging.ERROR: RED + format + END,
+        logging.CRITICAL: HIGH_RED + format + END,
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
+
+
 class Submitter:
     def submit_flags(self, flags: List[str]):
         """
@@ -140,6 +179,12 @@ def loop(app: Flask):
     with app.app_context():
         logger = current_app.logger  # Need to get it before sleep, otherwise it doesn't work. Don't know why.
 
+        logger.handlers.clear()
+        custom_handler = logging.StreamHandler()
+        custom_handler.setLevel(logging.DEBUG)
+        custom_handler.setFormatter(CustomFormatter())
+        logger.addHandler(custom_handler)
+
         if current_app.config["SUB_PROTOCOL"] not in submitters.keys():
             logger.error(f"Invalid SUB_PROTOCOL {current_app.config['SUB_PROTOCOL']}. Valid values are {list(submitters.keys())}")
             return
@@ -147,7 +192,7 @@ def loop(app: Flask):
 
         # Let's not make it start right away
         time.sleep(5)
-        logger.info('starting.')
+        logger.info(f'{GREEN}starting.{END}')
         database = db.get_db()
         queue = OrderedSetQueue()
         while True:
@@ -174,7 +219,23 @@ def loop(app: Flask):
 
                     submit_result = submitter.submit_flags(flags)
 
+                    if type(submit_result) == dict:
+                        # {'code': 'RATE_LIMIT', 'message': '[RATE_LIMIT] Rate limit exceeded'}
+                        if submit_result.get('code', '') == 'RATE_LIMIT':
+                            msg = submit_result.get('message', '')
+                            if msg:
+                                logger.warning(f'{HIGH_YELLOW}{msg}{YELLOW}')
+                            else:
+                                logger.error(f'Submit result: {submit_result}')
+                            time.sleep(current_app.config['SUB_INTERVAL'])
+                        else:
+                            logger.error(f'Submit result: {submit_result}')
+                        break
+
                     # executemany() would be better, but it's fine like this.
+                    invalid = 0
+                    accepted = 0
+                    old = 0
                     for item in submit_result:
                         if (submitter.SUB_INVALID.lower() in item['msg'].lower() or
                                 submitter.SUB_YOUR_OWN.lower() in item['msg'].lower() or
@@ -185,25 +246,39 @@ def loop(app: Flask):
                             SET status = ?, server_response = ?
                             WHERE flag = ?
                             ''', (current_app.config['DB_SUB'], current_app.config['DB_ERR'], item['flag']))
+                            invalid += 1
                         elif submitter.SUB_OLD.lower() in item['msg'].lower():
                             cursor.execute('''
                             UPDATE flags
                             SET status = ?, server_response = ?
                             WHERE flag = ?
                             ''', (current_app.config['DB_SUB'], current_app.config['DB_EXP'], item['flag']))
+                            old += 1
                         elif submitter.SUB_ACCEPTED.lower() in item['msg'].lower():
                             cursor.execute('''
                             UPDATE flags
                             SET status = ?, server_response = ?
                             WHERE flag = ?
                             ''', (current_app.config['DB_SUB'], current_app.config['DB_SUCC'], item['flag']))
+                            accepted += 1
+                        else:
+                            logger.error(f'{item}')
                         i += 1
+
+                    msg = f'Submitted {GREEN}{len(flags)}{END} flags {CYAN}{accepted} Accepted{END}'
+                    if old:
+                        msg += f' | {BLUE}{old} Old{END}'
+                    if invalid:
+                        msg += f' | {RED}{invalid} Invalid{END}'
+                    logger.info(msg)
+
+
             except requests.exceptions.RequestException:
-                logger.error('Could not send the flags to the server, retrying...')
-            except TypeError:
-                # logger.info(str(submit_result))
-                logger.error('Limit Rate exceeded, retrying...')
+                logger.warning(f'{HIGH_YELLOW}Could not send the flags to the server, retrying...{YELLOW}')
+            except Exception as e:
+                logger.critical(f'{e}')
                 time.sleep(current_app.config['SUB_INTERVAL'])
+
             finally:
                 # At the end, update status as EXPIRED for flags not sent because too old
                 cursor.execute('''

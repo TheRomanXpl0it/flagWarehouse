@@ -7,7 +7,7 @@ services:
     build: 
       context: .
     ports:
-      - 5000:5000
+      - 5555:5555
     volumes:
       - ./config.py:/server/config.py:ro
       - ./instance:/server/instance/
