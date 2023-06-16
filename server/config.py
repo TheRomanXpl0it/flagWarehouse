@@ -22,8 +22,8 @@ class Config(object):
 
 	SUB_PROTOCOL = 'ccit' # submitter protocol. Valid values are 'dummy', 'ccit', 'faust'
 	SUB_LIMIT = 1 # number of requests per interval
-	SUB_INTERVAL = 5 # interval duration
-	SUB_PAYLOAD_SIZE = 100 # max flag per request
+	SUB_INTERVAL = 20 # interval duration
+	SUB_PAYLOAD_SIZE = 500 # max flag per request
 	SUB_URL = 'http://10.10.0.1:8080/flags'
 
 	# Don't worry about this

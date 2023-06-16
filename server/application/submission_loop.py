@@ -239,7 +239,6 @@ def loop(app: Flask):
 					for item in submit_result:
 						if (submitter.SUB_INVALID.lower() in item['msg'].lower() or
 								submitter.SUB_YOUR_OWN.lower() in item['msg'].lower() or
-								submitter.SUB_STOLEN.lower() in item['msg'].lower() or
 								submitter.SUB_NOP.lower() in item['msg'].lower()):
 							cursor.execute('''
 							UPDATE flags
@@ -254,7 +253,8 @@ def loop(app: Flask):
 							WHERE flag = ?
 							''', (current_app.config['DB_SUB'], current_app.config['DB_EXP'], item['flag']))
 							old += 1
-						elif submitter.SUB_ACCEPTED.lower() in item['msg'].lower():
+						elif (submitter.SUB_ACCEPTED.lower() in item['msg'].lower() or
+								submitter.SUB_STOLEN.lower() in item['msg'].lower()):
 							cursor.execute('''
 							UPDATE flags
 							SET status = ?, server_response = ?
@@ -269,12 +269,14 @@ def loop(app: Flask):
 					if old:
 						msg += f' {BLUE}{old} Old{END}'
 					if invalid:
+						logger.warning(f'{HIGH_YELLOW}{submit_result}{END}')
 						msg += f' {RED}{invalid} Invalid{END}'
 					logger.info(msg)
 
 
-			except requests.exceptions.RequestException:
+			except requests.exceptions.RequestException as e:
 				logger.warning(f'{HIGH_YELLOW}Could not send the flags to the server, retrying...{YELLOW}')
+				logger.warning(f'{e}')
 			except Exception as e:
 				logger.critical(f'{e}')
 				time.sleep(current_app.config['SUB_INTERVAL'])
