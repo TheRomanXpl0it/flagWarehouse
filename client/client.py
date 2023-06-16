@@ -9,6 +9,7 @@ import signal
 import subprocess
 import sys
 import time
+import random
 from datetime import datetime
 from multiprocessing import Pool
 from threading import Timer
@@ -249,6 +250,8 @@ def main(args):
             signal.signal(signal.SIGINT, original_sigint_handler)
 
             # Run exploits
+            random.shuffle(scripts)
+            random.shuffle(teams)
             for script in scripts:
                 for team in teams:
                     pool.apply_async(
