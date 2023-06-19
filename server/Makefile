@@ -3,13 +3,13 @@ DC = sudo docker compose
 all: up
 
 build:
-	$(DC) up --build
+	$(DC) up --build --no-log-prefix
 
 clear:
 	rm -rf instance/flagWarehouse*
 
 up:
-	$(DC) up
+	$(DC) up --no-log-prefix
 
 down:
 	$(DC) down

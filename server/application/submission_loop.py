@@ -227,15 +227,15 @@ def loop(app: Flask):
 								logger.warning(f'{HIGH_YELLOW}{msg}{YELLOW}')
 							else:
 								logger.error(f'Submit result: {submit_result}')
-							time.sleep(current_app.config['SUB_INTERVAL'])
 						else:
 							logger.error(f'Submit result: {submit_result}')
+						time.sleep(current_app.config['SUB_INTERVAL'])
 						break
 
 					# executemany() would be better, but it's fine like this.
 					invalid = 0
-					accepted = 0
 					old = 0
+					accepted = 0
 					for item in submit_result:
 						if (submitter.SUB_INVALID.lower() in item['msg'].lower() or
 								submitter.SUB_YOUR_OWN.lower() in item['msg'].lower() or
