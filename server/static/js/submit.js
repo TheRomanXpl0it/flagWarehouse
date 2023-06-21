@@ -24,13 +24,13 @@ $("#submit").on("click", function() {
             success: function(response){
                 $("#result")
                     .removeClass("alert-error")
-                    .addClass("alert-success")
+                    .addClass("alert-info")
                     .text(response)
                     .show(250);
             },
             error: function(xhr, status, error){
                 $("#result")
-                    .removeClass("alert-success")
+                    .removeClass("alert-info")
                     .addClass("alert-error")
                     .text(xhr.responseText)
                     .show(250);

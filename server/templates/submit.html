@@ -9,11 +9,10 @@
                 <textarea id="flags" class="form-control" placeholder="C4T4N14M3RD4="></textarea>
                 <small class="form-text text-muted">You can send multiple flags, one in each row.</small>   
                 <button id="submit" class="btn btn-primary">Submit flags</button>
-                <div id="result" class="m-1 alert alert-info" role="alert" style="display: none">...</div>
+                <div id="result" class="m-1 alert" role="alert" style="display: none">...</div>
             </div>
         </div>
     </div>
-    
 {% endblock %}
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/submit.js') }}"></script>
