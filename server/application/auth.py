@@ -63,7 +63,9 @@ def api_auth_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         token = request.headers.get('X-Auth-Token', type=str)
-        if token != current_app.config['API_TOKEN']:
+        # we check "g.user is None", just like @login_required()
+        # so that we can also allow web UI users to access the API and submit flags
+        if token != current_app.config['API_TOKEN'] and g.user is None:
             return 'Wrong authorization token', 403
         return view(**kwargs)
 
