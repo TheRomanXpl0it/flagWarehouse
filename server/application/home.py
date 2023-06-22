@@ -62,7 +62,7 @@ def index():
 def chart_data():
     try:
         mins = int(request.args['mins'])
-        exploit_filter = request.args['exploitFilter'].strip()
+        exploit_filter = request.args.get('exploitFilter', '').strip()
     except (ValueError, TypeError):
         return "<h1>Bad request</h1>", 400
     now = datetime.now()

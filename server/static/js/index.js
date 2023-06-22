@@ -226,9 +226,9 @@ let showTeamsInfo = function() {
         $('#teamsDetailsModal .modal-title').text('Details (all exploits)');
 
     if (!missingTeams.length) {
-        $('#teamsDetailsModal .modal-body').text(`You're exploiting all ${exploitableTeams} teams. Very good!`);
+        $('#teamsDetailsModal .modal-body').text(`You're attacking all ${exploitableTeams} teams. Very good!`);
     } else {
-        let output = `You're exploiting ${flaggedTeams.length} out of ${exploitableTeams} teams.<br /><br />These teams aren't vulnerable: <ul><li>`;
+        let output = `You're attacking ${flaggedTeams.length} out of ${exploitableTeams} teams.<br /><br />These teams aren't vulnerable: <ul><li>`;
         output += missingTeams.join('</li><li>')
         output += '</li></ul>Pwn them, bitch!';
         $('#teamsDetailsModal .modal-body').html(output);
