@@ -62,6 +62,7 @@ def index():
 def chart_data():
     try:
         mins = int(request.args['mins'])
+        exploit_filter = request.args['exploitFilter'].strip()
     except (ValueError, TypeError):
         return "<h1>Bad request</h1>", 400
     now = datetime.now()
@@ -97,16 +98,17 @@ def chart_data():
             ORDER BY first_occurrence_in_timeframe
             ''', (start_s,))
         barsExploit_rows = cur.fetchall()
-        cur.execute('''
+        exploit_filter_query = "AND exploit_name = :exploit" if exploit_filter else ""
+        cur.execute(f'''
             SELECT
                team_ip,
                SUM(server_response LIKE 'SUCCESS') AS accepted,
                SUM(server_response LIKE 'ERROR') AS error
             FROM flags
-            WHERE time >= ?
+            WHERE time >= :time {exploit_filter_query}
             GROUP BY team_ip
             ORDER BY team_ip
-            ''', (start_s,))
+            ''', {"time": start_s, "exploit": exploit_filter})
         barsTeams_rows = cur.fetchall()
     else:
         cur.execute('''
@@ -130,16 +132,17 @@ def chart_data():
             ORDER BY first_occurrence
             ''')
         barsExploit_rows = cur.fetchall()
-        cur.execute('''
+        exploit_filter_query = "WHERE exploit_name = :exploit" if exploit_filter else ""
+        cur.execute(f'''
             SELECT
                team_ip,
                SUM(server_response LIKE 'SUCCESS') AS accepted,
                SUM(server_response LIKE 'ERROR') AS error,
                MIN(time) AS first_occurrence
-            FROM flags
+            FROM flags {exploit_filter_query}
             GROUP BY team_ip
             ORDER BY team_ip
-            ''')
+            ''', {"exploit": exploit_filter})
         barsTeams_rows = cur.fetchall()
 
     doughnut_dict = {

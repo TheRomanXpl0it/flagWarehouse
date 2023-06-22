@@ -1,5 +1,6 @@
 let mins;
 let secs;
+let exploitFilter;
 let intervalID;
 
 let chDoughnut = new Chart($('#chDoughnut'), {
@@ -93,7 +94,8 @@ let updateAll = function () {
         url: '/index/chart_data',
         method: 'get',
         data: {
-            mins: mins
+            mins: mins,
+            exploitFilter: exploitFilter
         },
         dataType: 'json',
         success: function (response) {
@@ -103,6 +105,7 @@ let updateAll = function () {
             chDoughnut.data.datasets[0].data[2] = response.doughnutStatus.expired;
             chDoughnut.data.datasets[0].data[3] = response.doughnutStatus.error;
             chDoughnut.update();
+
 
             // Exploits
             // Remove old objects and labels
@@ -125,7 +128,7 @@ let updateAll = function () {
                 });
             });
 
-            // Update and add new objects and labels
+            // Update and add new objects, labels and menu options
             for (let i = 0; i < response.barsExploit.length; i++) {
                 let item = response.barsExploit[i];
                 if (chBarsExploits.data.labels.includes(item.name)) {
@@ -144,8 +147,18 @@ let updateAll = function () {
                     chBarsExploits.data.datasets[0].data.splice(i, 0, acceptedObj);
                     chBarsExploits.data.datasets[1].data.splice(i, 0, errorObj);
                 }
+                // Remove invalid exploits menu options and add new ones
+                // "validExploit" is a temporary class to test that an exploit still exists, just in case
+                let selector = $(`.exploitSelectOption[value="${response.barsExploit[i].name}"`);
+                if(selector.length)
+                    selector.addClass("validExploit");
+                else
+                $('#exploitSelect').append(`<option value="${item.name}" class="exploitSelectOption validExploit">${item.name}</option>`);
             }
             chBarsExploits.update();
+            $(".exploitSelectOption:not(.validExploit)").remove();
+            $(".exploitSelectOption").removeClass("validExploit");
+
 
             // Teams
             // Remove old objects and labels
@@ -196,6 +209,7 @@ let updateAll = function () {
 window.onload = function () {
     mins = $('#minsSelect').val();
     secs = $('#autorefreshSelect').val();
+    exploitFilter = '';
     updateAll();
     intervalID = setInterval(updateAll, secs * 1000);
 };
@@ -210,4 +224,9 @@ $('#autorefreshSelect').on('change', function () {
     updateAll();
     clearInterval(intervalID);
     intervalID = setInterval(updateAll, secs * 1000);
+})
+
+$('#exploitSelect').on('change', function () {
+    exploitFilter = $('#exploitSelect').val();
+    updateAll();
 })
