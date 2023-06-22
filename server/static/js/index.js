@@ -1,6 +1,7 @@
 let mins;
 let secs;
 let exploitFilter;
+let flaggedTeams;
 let intervalID;
 
 let chDoughnut = new Chart($('#chDoughnut'), {
@@ -107,7 +108,7 @@ let updateAll = function () {
             chDoughnut.update();
 
 
-            // Exploits
+            // EXPLOITS
             // Remove old objects and labels
             chBarsExploits.data.labels = chBarsExploits.data.labels.filter(function (label) {
                 for (let i = 0; i < response.barsExploit.length; i++) {
@@ -160,7 +161,7 @@ let updateAll = function () {
             $(".exploitSelectOption").removeClass("validExploit");
 
 
-            // Teams
+            // TEAMS
             // Remove old objects and labels
             chBarsTeams.data.labels = chBarsTeams.data.labels.filter(function (label) {
                 for (let i = 0; i < response.barsTeams.length; i++) {
@@ -182,8 +183,10 @@ let updateAll = function () {
             });
 
             // Update and add new objects and labels
+            flaggedTeams = [];
             for (let i = 0; i < response.barsTeams.length; i++) {
                 let item = response.barsTeams[i];
+                flaggedTeams.push(item.name);
                 if (chBarsTeams.data.labels.includes(item.name)) {
                     let idxAccepted = chBarsTeams.data.datasets[0].data.findIndex(obj => {
                         return obj.x === item.name;
@@ -205,6 +208,34 @@ let updateAll = function () {
         }
     });
 };
+
+let showTeamsInfo = function() {
+    let missingTeams = [];
+    let exploitableTeams = numberOfTeams - 1;
+    for (let i = 1; i <= numberOfTeams; i++) {
+        if (i == myTeam)
+            continue;
+        let team = teamFormat.replace("{}", i);
+        if (!flaggedTeams.includes(team))
+            missingTeams.push(team);
+    }
+
+    if (exploitFilter)
+        $('#teamsDetailsModal .modal-title').text(`Details (${exploitFilter})`);
+    else
+        $('#teamsDetailsModal .modal-title').text('Details (all exploits)');
+
+    if (!missingTeams.length) {
+        $('#teamsDetailsModal .modal-body').text(`You're exploiting all ${exploitableTeams} teams. Very good!`);
+    } else {
+        let output = `You're exploiting ${flaggedTeams.length} out of ${exploitableTeams} teams.<br /><br />These teams aren't vulnerable: <ul><li>`;
+        output += missingTeams.join('</li><li>')
+        output += '</li></ul>Pwn them, bitch!';
+        $('#teamsDetailsModal .modal-body').html(output);
+    }
+    
+    $('#teamsDetailsModal').modal('show');
+}
 
 window.onload = function () {
     mins = $('#minsSelect').val();

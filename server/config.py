@@ -10,7 +10,8 @@ class Config(object):
 	SECRET_KEY = 'not_secret_key'
 
 	# Teams
-	YOUR_TEAM = f'10.60.{TEAM}.1'
+	TEAM_FORMAT = '10.60.{}.1'
+	YOUR_TEAM = TEAM_FORMAT.format(TEAM) # possibly ugly, but the format is needed inside JS
 	TEAMS = [f'10.60.{i}.1' for i in range(1, NUMBER_OF_TEAMS + 1)] # list of all teams
 	TEAMS.remove(YOUR_TEAM)
 

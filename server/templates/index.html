@@ -29,7 +29,7 @@
                 <div class="row mx-auto h-50 pt-2">
                     <div class="card w-100 h-100">
                         <div class="card-header">
-                            Teams
+                            Teams<sup><a href="javascript:showTeamsInfo()">?</a></sup>
                         </div>
                         <div class="card-body">
                             <canvas id="chBarsTeams"></canvas>
@@ -67,8 +67,25 @@
             </form>
         </div>
     </div>
+    <div class="modal" id="teamsDetailsModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Details</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body"></div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
 {% endblock %}
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+    <script>let myTeam = {{ config['TEAM'] }}, numberOfTeams = {{ config['NUMBER_OF_TEAMS'] }}, teamFormat = '{{ config['TEAM_FORMAT'] }}';</script>
 {% endblock %}
