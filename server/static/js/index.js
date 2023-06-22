@@ -151,10 +151,12 @@ let updateAll = function () {
                 // Remove invalid exploits menu options and add new ones
                 // "validExploit" is a temporary class to test that an exploit still exists, just in case
                 let selector = $(`.exploitSelectOption[value="${response.barsExploit[i].name}"`);
-                if(selector.length)
+                if(selector.length) {
                     selector.addClass("validExploit");
-                else
-                $('#exploitSelect').append(`<option value="${item.name}" class="exploitSelectOption validExploit">${item.name}</option>`);
+                } else {
+                    let option = $("<option></option>").val(item.name).addClass("exploitSelectOption").addClass("validExploit").text(item.name);
+                    $('#exploitSelect').append(option);
+                }
             }
             chBarsExploits.update();
             $(".exploitSelectOption:not(.validExploit)").remove();
