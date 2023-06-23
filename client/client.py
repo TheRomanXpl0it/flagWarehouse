@@ -174,6 +174,7 @@ def main(args):
     flag_format = re.compile(config['format'])
     round_duration = config['round']
     teams = config['teams']
+    myTeam = config['your_team']
     flagid_url = config.get('flagid_url', '')
     logging.info('Client correctly configured.')
 
@@ -186,17 +187,32 @@ def main(args):
             # Retrieve flag_ids
             if flagid_url:
                 try:
-                    r = requests.get(flagid_url, timeout=15)
+                    r = requests.get(flagid_url + "?team=" + myTeam, timeout=15)
 
                     if r.status_code != 200:
                         logging.error(
                             f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
                         time.sleep(5)
                         continue
-
+                    
+                    services = list(r.json().keys())
+                    flag_ids = {}
+                    fail = False
+                    for service in services:
+                        r = requests.get(flagid_url + "?service=" + service, timeout=15)
+                        if r.status_code != 200:
+                            logging.error(
+                                f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
+                            fail = True
+                            break
+                        flag_ids[service] = r.json().get(service, {})
+                    if fail:
+                        time.sleep(5)
+                        continue
+                    
                     dir_path = os.path.dirname(os.path.realpath(__file__))
                     with open(f'{dir_path}/flag_ids.json', 'w', encoding='utf-8') as f:
-                        f.write(r.text)
+                        json.dump(flag_ids, f)
                 except TimeoutError:
                     logging.error(
                         f'{flagid_url} timed out: Retrying in 5 seconds.')
