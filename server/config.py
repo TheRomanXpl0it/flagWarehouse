@@ -8,12 +8,13 @@ class Config(object):
 	WEB_PASSWORD = 'password'
 	API_TOKEN = 'custom_token'
 	SECRET_KEY = 'not_secret_key'
-
+	
 	# Teams
 	TEAM_FORMAT = '10.60.{}.1'
-	YOUR_TEAM = TEAM_FORMAT.format(TEAM) # possibly ugly, but the format is needed inside JS
+	TEAM_IP = TEAM_FORMAT.format(TEAM) # possibly ugly, but the format is needed inside JS
 	TEAMS = [f'10.60.{i}.1' for i in range(1, NUMBER_OF_TEAMS + 1)] # list of all teams
-	TEAMS.remove(YOUR_TEAM)
+	TEAMS.remove(TEAM_IP)
+	NOP_TEAM = TEAM_FORMAT.format(0) # this will be used to ask for flag ids' service list by CCIT exploits
 
 	ROUND_DURATION = 120
 	FLAG_ALIVE = 5 * ROUND_DURATION
@@ -33,7 +34,6 @@ class Config(object):
 	DB_SUCC = 'SUCCESS'
 	DB_ERR = 'ERROR'
 	DB_EXP = 'EXPIRED'
-
 
 	DATABASE = 'instance/flagWarehouse.sqlite'
 	#################

@@ -174,7 +174,7 @@ def main(args):
     flag_format = re.compile(config['format'])
     round_duration = config['round']
     teams = config['teams']
-    myTeam = config['your_team']
+    nopTeam = config.get('nop_team', '')
     flagid_url = config.get('flagid_url', '')
     logging.info('Client correctly configured.')
 
@@ -187,7 +187,7 @@ def main(args):
             # Retrieve flag_ids
             if flagid_url:
                 try:
-                    r = requests.get(flagid_url + "?team=" + myTeam, timeout=15)
+                    r = requests.get(flagid_url + "?team=" + nopTeam, timeout=15)
 
                     if r.status_code != 200:
                         logging.error(
