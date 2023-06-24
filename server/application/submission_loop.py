@@ -14,7 +14,8 @@ from . import db
 
 END				= "\033[0m"
 
-GREY			= "\033[30m"
+BLACK			= "\033[30m"
+GREY			= "\033[90m"
 RED				= "\033[31m"
 GREEN			= "\033[32m"
 YELLOW			= "\033[33m"
@@ -33,14 +34,14 @@ HIGH_CYAN		= "\033[96m"
 
 class CustomFormatter(logging.Formatter):
 
-	format = "[%(asctime)s] %(levelname)s: %(message)s"
+	fmt = "[%(asctime)s] %(levelname)s: %(message)s"
 
 	FORMATS = {
-		logging.DEBUG: GREY + format + END,
-		logging.INFO: format,
-		logging.WARNING: YELLOW + format + END,
-		logging.ERROR: RED + format + END,
-		logging.CRITICAL: HIGH_RED + format + END,
+		logging.DEBUG: GREY + fmt + END,
+		logging.INFO: GREY + "[%(asctime)s]" + END + " %(levelname)s: %(message)s",
+		logging.WARNING: YELLOW + "[%(asctime)s] %(levelname)s: " + HIGH_YELLOW + "%(message)s" + END,
+		logging.ERROR: RED + fmt + END,
+		logging.CRITICAL: HIGH_RED + fmt + END,
 	}
 
 	def format(self, record):
@@ -224,7 +225,7 @@ def loop(app: Flask):
 						if submit_result.get('code', '') == 'RATE_LIMIT':
 							msg = submit_result.get('message', '')
 							if msg:
-								logger.warning(f'{HIGH_YELLOW}{msg}{YELLOW}')
+								logger.warning(f'{msg}')
 							else:
 								logger.error(f'Submit result: {submit_result}')
 						else:
@@ -233,49 +234,53 @@ def loop(app: Flask):
 						break
 
 					# executemany() would be better, but it's fine like this.
-					invalid = 0
-					old = 0
 					accepted = 0
+					old = 0
+					nop = 0
+					yours = 0
+					invalid = 0
+					update_flag = '''
+					UPDATE flags
+					SET status = ?, server_response = ?
+					WHERE flag = ?
+					'''
+
 					for item in submit_result:
-						if (submitter.SUB_INVALID.lower() in item['msg'].lower() or
-								submitter.SUB_YOUR_OWN.lower() in item['msg'].lower() or
-								submitter.SUB_NOP.lower() in item['msg'].lower()):
-							cursor.execute('''
-							UPDATE flags
-							SET status = ?, server_response = ?
-							WHERE flag = ?
-							''', (current_app.config['DB_SUB'], current_app.config['DB_ERR'], item['flag']))
+						if submitter.SUB_INVALID.lower() in item['msg'].lower():
+							cursor.execute(update_flag, (current_app.config['DB_SUB'], current_app.config['DB_ERR'], item['flag']))
 							invalid += 1
+						elif submitter.SUB_YOUR_OWN.lower() in item['msg'].lower():
+							cursor.execute(update_flag, (current_app.config['DB_SUB'], current_app.config['DB_ERR'], item['flag']))
+							yours += 1
+						elif submitter.SUB_NOP.lower() in item['msg'].lower():
+							cursor.execute(update_flag, (current_app.config['DB_SUB'], current_app.config['DB_ERR'], item['flag']))
+							nop += 1
 						elif submitter.SUB_OLD.lower() in item['msg'].lower():
-							cursor.execute('''
-							UPDATE flags
-							SET status = ?, server_response = ?
-							WHERE flag = ?
-							''', (current_app.config['DB_SUB'], current_app.config['DB_EXP'], item['flag']))
+							cursor.execute(update_flag, (current_app.config['DB_SUB'], current_app.config['DB_EXP'], item['flag']))
 							old += 1
 						elif (submitter.SUB_ACCEPTED.lower() in item['msg'].lower() or
 								submitter.SUB_STOLEN.lower() in item['msg'].lower()):
-							cursor.execute('''
-							UPDATE flags
-							SET status = ?, server_response = ?
-							WHERE flag = ?
-							''', (current_app.config['DB_SUB'], current_app.config['DB_SUCC'], item['flag']))
+							cursor.execute(update_flag, (current_app.config['DB_SUB'], current_app.config['DB_SUCC'], item['flag']))
 							accepted += 1
 						else:
 							logger.error(f'{item}')
 						i += 1
 
-					msg = f'Submitted {GREEN}{len(flags)}{END} flags: {CYAN}{accepted} Accepted{END}'
+					msg = f'Submitted {GREEN}{len(flags)}{END} flags: {GREEN}{accepted} Accepted{END}'
 					if old:
-						msg += f' {BLUE}{old} Old{END}'
+						msg += f' {CYAN}{old} Old{END}'
+					if nop:
+						msg += f' {HIGH_PURPLE}{nop} NOP{END}'
+					if yours:
+						msg += f' {HIGH_YELLOW}{yours} Yours{END}'
 					if invalid:
-						logger.warning(f'{HIGH_YELLOW}{submit_result}{END}')
+						# logger.warning(f'{submit_result}')
 						msg += f' {RED}{invalid} Invalid{END}'
 					logger.info(msg)
 
 
 			except requests.exceptions.RequestException as e:
-				logger.warning(f'{HIGH_YELLOW}Could not send the flags to the server, retrying...{YELLOW}')
+				logger.warning('Could not send the flags to the server, retrying...')
 				logger.warning(f'{e}')
 			except Exception as e:
 				logger.critical(f'{e}')
