@@ -191,7 +191,7 @@ def download_flag_ids_hitb(flagid_url, nopTeam, team_token) -> bool:
                     f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
                 fail = True
                 break
-            flag_ids[service] = r.json().get(service, {})
+            flag_ids[service] = r.json()['flag_ids']
         if fail:
             time.sleep(5)
             return False
