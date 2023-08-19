@@ -96,7 +96,7 @@ class CCITSubmitter(Submitter):
 							timeout=(current_app.config['SUB_INTERVAL'] / current_app.config['SUB_LIMIT']))
 
 		# Check if the gameserver sent a response about the flags or if it sent an error
-		if res.headers['Content-Type'] == 'application/json; charset=utf-8':
+		if 'application/json' in res.headers['Content-Type']:
 			return json.loads(res.text)
 		else:
 			current_app.logger.error(f'Received this response from the gameserver:\n\n{res.text}\n')
