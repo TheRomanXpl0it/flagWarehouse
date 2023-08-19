@@ -129,6 +129,88 @@ def run_exploit(exploit: str, ip: str, round_duration: int, server_url: str, tok
             f'{RED}{os.path.basename(exploit)}{END}@{ip} terminated with error code {HIGH_RED}{return_code}{END}')
 
 
+def download_flag_ids_ccit(flagid_url, nopTeam, team_token) -> bool:
+    """
+    Returns True if successful
+    """
+    try:
+        r = requests.get(flagid_url + "?team=" + nopTeam, timeout=15)
+
+        if r.status_code != 200:
+            logging.error(
+                f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
+            time.sleep(5)
+            return False
+        
+        services = list(r.json().keys())
+        flag_ids = {}
+        fail = False
+        for service in services:
+            r = requests.get(flagid_url + "?service=" + service, timeout=15)
+            if r.status_code != 200:
+                logging.error(
+                    f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
+                fail = True
+                break
+            flag_ids[service] = r.json().get(service, {})
+        if fail:
+            time.sleep(5)
+            return False
+        
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(f'{dir_path}/flag_ids.json', 'w', encoding='utf-8') as f:
+            json.dump(flag_ids, f)
+        return True
+    
+    except TimeoutError:
+        logging.error(
+            f'{flagid_url} timed out: Retrying in 5 seconds.')
+        time.sleep(5)
+        return False
+
+def download_flag_ids_hitb(flagid_url, nopTeam, team_token) -> bool:
+    """
+    Returns True if successful
+    """
+    try:
+        r = requests.get(flagid_url + "/services", timeout=15, headers={'X-Team-Token':team_token})
+
+        if r.status_code != 200:
+            logging.error(
+                f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
+            time.sleep(5)
+            return False
+        
+        services = list(r.json().keys())
+        flag_ids = {}
+        fail = False
+        for service in services:
+            r = requests.get(flagid_url + "/flag_ids?service=" + service, timeout=15, headers={'X-Team-Token':team_token})
+            if r.status_code != 200:
+                logging.error(
+                    f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
+                fail = True
+                break
+            flag_ids[service] = r.json().get(service, {})
+        if fail:
+            time.sleep(5)
+            return False
+        
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(f'{dir_path}/flag_ids.json', 'w', encoding='utf-8') as f:
+            json.dump(flag_ids, f)
+        return True
+    
+    except TimeoutError:
+        logging.error(
+            f'{flagid_url} timed out: Retrying in 5 seconds.')
+        time.sleep(5)
+        return False
+
+# download_flag_ids = download_flag_ids_ccit
+download_flag_ids = download_flag_ids_hitb
+
+
 def main(args):
     global pool
     print(BANNER)
@@ -176,6 +258,7 @@ def main(args):
     teams = config['teams']
     nopTeam = config.get('nop_team', '')
     flagid_url = config.get('flagid_url', '')
+    team_token = config['team_token']
     logging.info('Client correctly configured.')
 
     # MAIN LOOP
@@ -186,37 +269,7 @@ def main(args):
 
             # Retrieve flag_ids
             if flagid_url:
-                try:
-                    r = requests.get(flagid_url + "?team=" + nopTeam, timeout=15)
-
-                    if r.status_code != 200:
-                        logging.error(
-                            f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
-                        time.sleep(5)
-                        continue
-                    
-                    services = list(r.json().keys())
-                    flag_ids = {}
-                    fail = False
-                    for service in services:
-                        r = requests.get(flagid_url + "?service=" + service, timeout=15)
-                        if r.status_code != 200:
-                            logging.error(
-                                f'{flagid_url} responded with {r.status_code}: Retrying in 5 seconds.')
-                            fail = True
-                            break
-                        flag_ids[service] = r.json().get(service, {})
-                    if fail:
-                        time.sleep(5)
-                        continue
-                    
-                    dir_path = os.path.dirname(os.path.realpath(__file__))
-                    with open(f'{dir_path}/flag_ids.json', 'w', encoding='utf-8') as f:
-                        json.dump(flag_ids, f)
-                except TimeoutError:
-                    logging.error(
-                        f'{flagid_url} timed out: Retrying in 5 seconds.')
-                    time.sleep(5)
+                if not download_flag_ids(flagid_url, nopTeam, team_token):
                     continue
 
             # Load exploits

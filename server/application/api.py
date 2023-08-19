@@ -17,6 +17,7 @@ def get_config():
         'teams': current_app.config['TEAMS'],
         'nop_team': current_app.config['NOP_TEAM'],
         'flagid_url': current_app.config['FLAGID_URL'],
+        'team_token': current_app.config['TEAM_TOKEN'],
     }
     return jsonify(config_dict)
 
