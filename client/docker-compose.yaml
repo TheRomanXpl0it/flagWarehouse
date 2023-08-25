@@ -1,0 +1,9 @@
+version: "3"
+
+name: flagwarehouse_prod_client
+services:
+  attacker:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./exploits:/flagWarehouse/client/exploits:ro
