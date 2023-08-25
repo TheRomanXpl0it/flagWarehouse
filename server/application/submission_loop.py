@@ -245,6 +245,8 @@ def loop(app: Flask):
 					WHERE flag = ?
 					'''
 
+					if len(submit_result) == 0: break
+
 					for item in submit_result:
 						if submitter.SUB_INVALID.lower() in item['msg'].lower():
 							cursor.execute(update_flag, (current_app.config['DB_SUB'], current_app.config['DB_ERR'], item['flag']))
